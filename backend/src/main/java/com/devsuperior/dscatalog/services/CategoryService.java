@@ -1,7 +1,7 @@
 package com.devsuperior.dscatalog.services;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.devsuperior.dscatalog.dto.CategoryDTO;
 import com.devsuperior.dscatalog.entities.Category;
 import com.devsuperior.dscatalog.repositories.CategoryRepository;
+import com.devsuperior.dscatalog.services.exceptions.EntityNotFoundException;
 
 /*Camada de Serviço [CAMADA 2]*/
 /*Essa annotation serve para gerenciar as instancias do Spring*/
@@ -28,7 +29,9 @@ public class CategoryService {
 		/*Busca todas as informações do BD e inseri na list*/
 		List<Category> list =  repository.findAll();
 		
-		/*FORMA NOVA usando lambda MAP, a qual usa-se o valor de stream convertido, a qual coleta os dados e converte novamente para stream*/
+		/*FORMA NOVA usando lambda MAP, a qual usa-se o valor de stream convertido, a qual coleta os dados e converte novamente para stream
+		 * 						transformando o elemento x do tipo category(lista) em um novo categoryDTO (lista)
+		 * 														Collect transforma uma stream em uma lista*/
 		return list.stream().map(x -> new CategoryDTO(x)).collect(Collectors.toList());
 		
 		/*FORMA ANTIGA
@@ -40,5 +43,20 @@ public class CategoryService {
 		}*/
 		
 		/*return listDto;*/
+	}
+
+	public CategoryDTO findById(Long id) {
+		//Repository é o responsavel por acessar o BD
+		//O Optional evita trabalhar com valor Null, o Spring Data da JPA inseriu ele
+		Optional<Category> obj = repository.findById(id);
+		//1# - Sem o tratamento de erro 
+		//Category entity = obj.get();
+		//2# - Com o tratamento de erro, baseado no pacote de exceptions da entity que eu criei
+						//O orElseThrow serve para retornar uma exceção, através dele evitamos erro 500 para o usuário quando não tiver dado cadastrado no BD
+						//Outros chamadas permitem retornar obj alternativo ou null
+						//Nesse caso usamos orElseThrow com lambda, caso não traga nada do repository ele vai retornar a exceção
+		Category entity = obj.orElseThrow(() -> new EntityNotFoundException("Entity not found"));
+		
+		return new CategoryDTO(entity);
 	}
 }
