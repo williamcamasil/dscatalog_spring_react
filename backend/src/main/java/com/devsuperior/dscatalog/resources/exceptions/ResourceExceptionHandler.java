@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import com.devsuperior.dscatalog.services.exceptions.EntityNotFoundException;
+import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
 
 /* Essa annotation permite que essa Classe intercepte alguma exceção que 
  * acontecer na Camada de resource de controlador REST e dessa forma é aqui que
@@ -22,8 +22,8 @@ public class ResourceExceptionHandler {
 	erro nessa Classe, automaticamente será redirecionado para essse método, por isso foi chamado o orElseThrow com a Classe EntityNotFoundException 
 	no CategoryService para conectar todas elas e permitir esse retorno
 	 * */
-	@ExceptionHandler(EntityNotFoundException.class)
-	public ResponseEntity<StandardError> entityNotFound(EntityNotFoundException e, HttpServletRequest request) {
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<StandardError> entityNotFound(ResourceNotFoundException e, HttpServletRequest request) {
 		
 		
 		StandardError err = new StandardError();
