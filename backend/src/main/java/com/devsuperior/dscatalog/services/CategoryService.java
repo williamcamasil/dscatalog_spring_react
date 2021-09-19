@@ -8,6 +8,8 @@ import javax.persistence.EntityNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,16 @@ public class CategoryService {
 	@Autowired
 	private CategoryRepository repository;
 	
+	/*COM PAGINAÇÃO*/
+	@Transactional(readOnly = true)
+	public Page<CategoryDTO> findAllPaged(PageRequest pageRequest) {
+		/*findAll com paginação*/
+		Page<Category> list =  repository.findAll(pageRequest);
+		/*dessa forma não precisa mais do stream*/
+		return list.map(x -> new CategoryDTO(x));
+	}	
+	
+	/*ANTERIOR SEM PAGINAÇÃO*/
 	/*Com a annotation Transactional, o próprio framework faz a transação entre o banco de dados
 	 * o readOnly melhora a performance do BD*/
 	@Transactional(readOnly = true)
