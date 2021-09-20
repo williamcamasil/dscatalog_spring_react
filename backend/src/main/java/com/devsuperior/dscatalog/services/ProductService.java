@@ -13,88 +13,89 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.devsuperior.dscatalog.dto.CategoryDTO;
-import com.devsuperior.dscatalog.entities.Category;
-import com.devsuperior.dscatalog.repositories.CategoryRepository;
+import com.devsuperior.dscatalog.dto.ProductDTO;
+import com.devsuperior.dscatalog.entities.Product;
+import com.devsuperior.dscatalog.repositories.ProductRepository;
 import com.devsuperior.dscatalog.services.exceptions.DatabaseException;
 import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
 
 /*Camada de Serviço [CAMADA 2]*/
 /*Essa annotation serve para gerenciar as instancias do Spring*/
 @Service
-public class CategoryService {
+public class ProductService {
 	
 	/*O spring trata de injetar uma depedencia automática*/
 	@Autowired
-	private CategoryRepository repository;
+	private ProductRepository repository;
 	
 	/*COM PAGINAÇÃO*/
 	@Transactional(readOnly = true)
-	public Page<CategoryDTO> findAllPaged(PageRequest pageRequest) {
+	public Page<ProductDTO> findAllPaged(PageRequest pageRequest) {
 		/*findAll com paginação*/
-		Page<Category> list =  repository.findAll(pageRequest);
+		Page<Product> list =  repository.findAll(pageRequest);
 		/*dessa forma não precisa mais do stream*/
-		return list.map(x -> new CategoryDTO(x));
+		return list.map(x -> new ProductDTO(x));
 	}	
 	
 	/*ANTERIOR SEM PAGINAÇÃO*/
 	/*Com a annotation Transactional, o próprio framework faz a transação entre o banco de dados
 	 * o readOnly melhora a performance do BD*/
 	@Transactional(readOnly = true)
-	public List<CategoryDTO> findAll() {
+	public List<ProductDTO> findAll() {
 		/*Busca todas as informações do BD e inseri na list*/
-		List<Category> list =  repository.findAll();
+		List<Product> list =  repository.findAll();
 		
 		/*FORMA NOVA usando lambda MAP, a qual usa-se o valor de stream convertido, a qual coleta os dados e converte novamente para stream
 		 * 						transformando o elemento x do tipo category(lista) em um novo categoryDTO (lista)
 		 * 														Collect transforma uma stream em uma lista*/
-		return list.stream().map(x -> new CategoryDTO(x)).collect(Collectors.toList());
+		return list.stream().map(x -> new ProductDTO(x)).collect(Collectors.toList());
 		
 		/*FORMA ANTIGA
-		 * Criando uma lista de CategoryDTO para receber os dados do BD*/
-		/*List<CategoryDTO> listDto = new ArrayList<>();*/
+		 * Criando uma lista de ProductDTO para receber os dados do BD*/
+		/*List<ProductDTO> listDto = new ArrayList<>();*/
 		/*Inserindo as informações do BD dentro da listDto*/
-		/*for (Category cat : list) {
-			listDto.add(new CategoryDTO(cat));
+		/*for (Product cat : list) {
+			listDto.add(new ProductDTO(cat));
 		}*/
 		
 		/*return listDto;*/
 	}
-
+	
 	@Transactional(readOnly = true)
-	public CategoryDTO findById(Long id) {
+	public ProductDTO findById(Long id) {
 		//Repository é o responsavel por acessar o BD
 		//O Optional evita trabalhar com valor Null, o Spring Data da JPA inseriu ele
-		Optional<Category> obj = repository.findById(id);
+		Optional<Product> obj = repository.findById(id);
 		//1# - Sem o tratamento de erro 
-		//Category entity = obj.get();
+		//Product entity = obj.get();
 		//2# - Com o tratamento de erro, baseado no pacote de exceptions da entity que eu criei
 						//O orElseThrow serve para retornar uma exceção, através dele evitamos erro 500 para o usuário quando não tiver dado cadastrado no BD
 						//Outros chamadas permitem retornar obj alternativo ou null
 						//Nesse caso usamos orElseThrow com lambda, caso não traga nada do repository ele vai retornar a exceção
-		Category entity = obj.orElseThrow(() -> new ResourceNotFoundException("Entity not found"));
+		Product entity = obj.orElseThrow(() -> new ResourceNotFoundException("Entity not found"));
 		
-		return new CategoryDTO(entity);
+		//Com esse novo parametro de getCategories, no construtor dessa Classe irá popular o tipo de categoria que esse produto pertence
+		return new ProductDTO(entity, entity.getCategories());
 	}
 	
 	@Transactional
-	public CategoryDTO insert(CategoryDTO dto) {
-		Category entity = new Category();
-		entity.setName(dto.getName());
+	public ProductDTO insert(ProductDTO dto) {
+		Product entity = new Product();
+		// ---> entity.setName(dto.getName());
 		//Salvando dados no BD
 		entity = repository.save(entity);		
-		return new CategoryDTO(entity);
+		return new ProductDTO(entity);
 	}
 
 	@Transactional
-	public CategoryDTO update(Long id, CategoryDTO dto) {
+	public ProductDTO update(Long id, ProductDTO dto) {
 		try { //em caso do id não existir
 			//Diferença do finByID para o getOne é que o find ele busca as informações 
 			//e o getOne ele instancia os dados e só depois salva sem acessar 2 vezes o BD
-			Category entity = repository.getOne(id);
-			entity.setName(dto.getName());
+			Product entity = repository.getOne(id);
+			// ---> entity.setName(dto.getName());
 			entity = repository.save(entity);
-			return new CategoryDTO(entity);
+			return new ProductDTO(entity);
 		}catch (EntityNotFoundException e) {
 			throw new ResourceNotFoundException("Id not found " + id);
 		}
