@@ -13,8 +13,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.devsuperior.dscatalog.dto.CategoryDTO;
 import com.devsuperior.dscatalog.dto.ProductDTO;
+import com.devsuperior.dscatalog.entities.Category;
 import com.devsuperior.dscatalog.entities.Product;
+import com.devsuperior.dscatalog.repositories.CategoryRepository;
 import com.devsuperior.dscatalog.repositories.ProductRepository;
 import com.devsuperior.dscatalog.services.exceptions.DatabaseException;
 import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
@@ -27,6 +30,10 @@ public class ProductService {
 	/*O spring trata de injetar uma depedencia automática*/
 	@Autowired
 	private ProductRepository repository;
+	
+	//Usado no método copyDtoToEntity
+	@Autowired
+	private CategoryRepository categoryRepository;
 	
 	/*COM PAGINAÇÃO*/
 	@Transactional(readOnly = true)
@@ -81,6 +88,10 @@ public class ProductService {
 	@Transactional
 	public ProductDTO insert(ProductDTO dto) {
 		Product entity = new Product();
+		
+		//Esse método irá servir para não precisar ficar declarando mais de uma vez o mesmo código e 
+		//assim otimizar o que será usado e mostrado quando ele for necessário
+		copyDtoToEntity(dto, entity);
 		// ---> entity.setName(dto.getName());
 		//Salvando dados no BD
 		entity = repository.save(entity);		
@@ -93,6 +104,10 @@ public class ProductService {
 			//Diferença do finByID para o getOne é que o find ele busca as informações 
 			//e o getOne ele instancia os dados e só depois salva sem acessar 2 vezes o BD
 			Product entity = repository.getOne(id);
+			
+			//Esse método irá servir para não precisar ficar declarando mais de uma vez o mesmo código e 
+			//assim otimizar o que será usado e mostrado quando ele for necessário
+			copyDtoToEntity(dto, entity);
 			// ---> entity.setName(dto.getName());
 			entity = repository.save(entity);
 			return new ProductDTO(entity);
@@ -111,6 +126,28 @@ public class ProductService {
 		//tiver não deixar excluir, apenas se não tiver, pois dessa forma exite integridade referencial 
 		catch(DataIntegrityViolationException e) { 
 			throw new DatabaseException("Integrity violation");
+		}
+		
+	}
+	
+	//Método privado que irá setar os dados 
+	private void copyDtoToEntity(ProductDTO dto, Product entity) {
+		
+		//Povoando as entidades, não coloca o id porque ele é automatico
+		entity.setName(dto.getName());
+		entity.setDescription(dto.getDescription());
+		entity.setDate(dto.getDate());
+		entity.setImgUrl(dto.getImgUrl());
+		entity.setPrice(dto.getPrice());
+		
+		//Copiando as categorias do DTO para as categorias da entidade
+		//Limpar o conjunto de categorias que estiver nas categorias 
+		entity.getCategories().clear();
+		//foreach
+		for(CategoryDTO catDto : dto.getCategories()) {
+			Category category = categoryRepository.getOne(catDto.getId());
+			//Add categorias de verdade na entidade de produto
+			entity.getCategories().add(category);
 		}
 		
 	}
